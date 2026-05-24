@@ -3,12 +3,14 @@ import base64
 from django.core.files.base import ContentFile
 
 from rest_framework import serializers
-from rest_framework.validators import ValidationError
 
-from .models import Tag, Ingredient, RecipeIngredient, Recipe, Favorite, ShoppingCart
+from .models import (Tag, Ingredient, RecipeIngredient,
+                     Recipe, Favorite, ShoppingCart)
+
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
 
 class RecipeAuthorSerializer(serializers.ModelSerializer):
 
@@ -37,6 +39,7 @@ class RecipeAuthorSerializer(serializers.ModelSerializer):
             author=obj
         ).exists()
 
+
 class Base64ImageField(serializers.ImageField):
 
     def to_internal_value(self, data):
@@ -60,10 +63,12 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = '__all__'
 
+
 class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = '__all__'
+
 
 class IngredientAmountSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(
@@ -84,6 +89,7 @@ class IngredientAmountSerializer(serializers.ModelSerializer):
             'measurement_unit',
             'amount',
         )
+
 
 class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
@@ -135,9 +141,11 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             recipe=obj
         ).exists()
 
+
 class RecipeIngredientWriteSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     amount = serializers.IntegerField(min_value=1)
+
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
@@ -173,12 +181,12 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             )
 
         return recipe
-    
+
     def update(self, instance, validated_data):
 
         ingredients_data = validated_data.pop('ingredients', None)
         tags = validated_data.pop('tags', None)
- 
+
         if tags is not None:
             instance.tags.set(tags)
 
@@ -243,7 +251,6 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 )
 
         return data
-    
 
     class Meta:
         model = Recipe
@@ -256,6 +263,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             'text',
             'cooking_time',
         )
+
 
 class RecipeShortSerializer(serializers.ModelSerializer):
 

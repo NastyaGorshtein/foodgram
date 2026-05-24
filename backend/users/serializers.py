@@ -39,7 +39,8 @@ class UserSerializer(serializers.ModelSerializer):
         return request.user.subscriptions.filter(
             author=obj
         ).exists()
-    
+
+
 class CustomUserCreateSerializer(UserCreateSerializer):
 
     class Meta(UserCreateSerializer.Meta):
@@ -57,7 +58,8 @@ class CustomUserCreateSerializer(UserCreateSerializer):
             'first_name': {'required': True},
             'last_name': {'required': True},
         }
-    
+
+
 class AvatarSerializer(serializers.ModelSerializer):
 
     avatar = Base64ImageField()
@@ -65,6 +67,7 @@ class AvatarSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('avatar',)
+
 
 class SubscriptionSerializer(serializers.ModelSerializer):
 
@@ -95,7 +98,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         return request.user.subscriptions.filter(
             author=obj
         ).exists()
-    
+
     def get_recipes(self, obj):
         from recipes.serializers import RecipeShortSerializer
 
@@ -116,6 +119,6 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             many=True,
             context=self.context
         ).data
-    
+
     def get_recipes_count(self, obj):
         return obj.recipes.count()

@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.db.models import Count
 
 from djoser.views import UserViewSet as DjoserUserViewSet
@@ -8,11 +8,12 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.parsers import MultiPartParser, FormParser
 
 from recipes.pagination import CustomPagination
 from .models import Subscription, User
-from .serializers import UserSerializer, SubscriptionSerializer, AvatarSerializer
+from .serializers import (UserSerializer,
+                          SubscriptionSerializer,
+                          AvatarSerializer)
 
 
 class UserViewSet(DjoserUserViewSet):
@@ -85,7 +86,7 @@ class UserViewSet(DjoserUserViewSet):
         subscription.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
     @action(
         detail=False,
         methods=['get'],
@@ -106,7 +107,7 @@ class UserViewSet(DjoserUserViewSet):
                 page,
                 many=True,
                 context={'request': request}
-            ) 
+            )
             return self.get_paginated_response(serializer.data)
 
         serializer = SubscriptionSerializer(
@@ -116,7 +117,7 @@ class UserViewSet(DjoserUserViewSet):
         )
 
         return Response(serializer.data)
-    
+
 
 class AvatarView(APIView):
 

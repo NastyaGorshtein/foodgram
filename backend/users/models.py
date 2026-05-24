@@ -5,9 +5,9 @@ from django.conf import settings
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
-    avatar = models.ImageField(upload_to='users/', null=True, blank=True, verbose_name='Аватар')
+    avatar = models.ImageField(upload_to='users/', null=True,
+                               blank=True, verbose_name='Аватар')
     USERNAME_FIELD = 'email'
-
 
     REQUIRED_FIELDS = [
         'username',
@@ -16,9 +16,9 @@ class User(AbstractUser):
     ]
 
     class Meta:
-       
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+
 
 class Subscription(models.Model):
     user = models.ForeignKey(

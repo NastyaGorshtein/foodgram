@@ -6,16 +6,17 @@ from .models import (
 
 admin.site.empty_value_display = 'Не задано'
 
+
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
     extra = 1
+
 
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'author', 'favorites_count')
     search_fields = ('name', 'author__username')
     list_filter = ('tags',)
     inlines = (RecipeIngredientInline,)
-
 
     def favorites_count(self, obj):
         return obj.favorites.count()

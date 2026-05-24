@@ -1,11 +1,12 @@
-from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum
 from django.http import HttpResponse
 
 from rest_framework import viewsets
-from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticatedOrReadOnly,  IsAuthenticated, AllowAny
+from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
+                                        IsAuthenticated,
+                                        AllowAny
+                                        )
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
@@ -13,8 +14,11 @@ from rest_framework import status
 from .filters import RecipeFilter
 from .pagination import CustomPagination
 from .permissions import IsAuthorOrReadOnly
-from .models import Tag, Ingredient, Recipe, Favorite, ShoppingCart, RecipeIngredient
-from .serializers import TagSerializer, IngredientSerializer, RecipeReadSerializer, RecipeWriteSerializer, RecipeShortSerializer
+from .models import (Tag, Ingredient, Recipe,
+                     Favorite, ShoppingCart, RecipeIngredient)
+from .serializers import (TagSerializer, IngredientSerializer,
+                          RecipeReadSerializer, RecipeWriteSerializer,
+                          RecipeShortSerializer)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -22,6 +26,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     permission_classes = (AllowAny,)
     pagination_class = None
+
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
@@ -42,13 +47,14 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
         return queryset
 
+
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = (IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly)
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
-    
+
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
@@ -56,7 +62,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.action in ('create', 'update', 'partial_update'):
             return RecipeWriteSerializer
         return RecipeReadSerializer
-    
+
     def create(self, request, *args, **kwargs):
 
         serializer = self.get_serializer(data=request.data)
@@ -75,7 +81,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             read_serializer.data,
             status=status.HTTP_201_CREATED
         )
-    
+
     def update(self, request, *args, **kwargs):
 
         partial = kwargs.pop('partial', False)
@@ -98,7 +104,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
         return Response(read_serializer.data)
-    
+
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
@@ -123,7 +129,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     {'errors': 'Рецепт уже в избранном'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             Favorite.objects.create(
                 user=request.user,
                 recipe=recipe
@@ -153,7 +159,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         favorite.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
     @action(
         detail=True,
         methods=['post', 'delete'],
@@ -204,7 +210,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         shopping_cart.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
     @action(
         detail=False,
         methods=['get'],
@@ -240,7 +246,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
         return response
-    
+
     @action(
         detail=True,
         methods=['get'],

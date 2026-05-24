@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 
+
 class Tag(models.Model):
     name = models.CharField(
         max_length=200,
@@ -14,11 +15,12 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
-    
+
     class Meta:
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
-    
+
+
 class Ingredient(models.Model):
     name = models.CharField(
         max_length=200,
@@ -31,7 +33,7 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return f'{self.name} ({self.measurement_unit})'
-    
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -41,6 +43,7 @@ class Ingredient(models.Model):
         ]
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+
 
 class Recipe(models.Model):
     author = models.ForeignKey(
@@ -78,11 +81,12 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name
-    
+
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-    
+
+
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         'Recipe',
@@ -110,6 +114,7 @@ class RecipeIngredient(models.Model):
         verbose_name = 'Рецепт Ингредиент'
         verbose_name_plural = 'Рецепты Ингредиенты'
 
+
 class Favorite(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -131,8 +136,9 @@ class Favorite(models.Model):
                 name='unique_favorite'
             )
         ]
-        verbose_name='Избранное'
-        verbose_name_plural='Избранные'
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранные'
+
 
 class ShoppingCart(models.Model):
     user = models.ForeignKey(
