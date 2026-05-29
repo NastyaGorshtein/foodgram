@@ -29,8 +29,6 @@ services:
 
   gateway:
     image: nastyagorshtein/foodgram_gateway
-    depends_on:
-      - backend
     ports:
       - "80:80"
     volumes:
