@@ -78,6 +78,10 @@ class Recipe(models.Model):
         related_name='recipes',
         verbose_name='Ингредиент'
     )
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата публикации'
+    )
 
     def __str__(self):
         return self.name
