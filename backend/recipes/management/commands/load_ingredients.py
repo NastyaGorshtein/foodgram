@@ -15,5 +15,3 @@ class Command(BaseCommand):
                 name=item['name'],
                 measurement_unit=item['measurement_unit']
             )
-
-        print('Готово!')

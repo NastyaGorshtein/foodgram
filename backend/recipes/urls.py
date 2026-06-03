@@ -1,15 +1,10 @@
-from django.urls import include, path
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 
-from .views import TagViewSet, IngredientViewSet, RecipeViewSet
-
-
-router = DefaultRouter()
-
-router.register('tags', TagViewSet)
-router.register('ingredients', IngredientViewSet)
-router.register('recipes', RecipeViewSet)
+from .views import RecipeRedirectView
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path(
+        's/<int:pk>/',
+        RecipeRedirectView.as_view()
+    ),
 ]
