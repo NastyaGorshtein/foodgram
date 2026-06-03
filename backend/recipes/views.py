@@ -9,4 +9,4 @@ class RecipeRedirectView(View):
     def get(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
 
-        return redirect(f'/api/recipes/{recipe.pk}/')
+        return redirect(f'/recipes/{recipe.pk}/')
