@@ -4,9 +4,33 @@ from django.conf import settings
 
 
 class User(AbstractUser):
-    email = models.EmailField(unique=True)
-    avatar = models.ImageField(upload_to='users/', null=True,
-                               blank=True, verbose_name='Аватар')
+    email = models.EmailField(
+        unique=True,
+        verbose_name='Email'
+    )
+
+    avatar = models.ImageField(
+        upload_to='users/',
+        null=True,
+        blank=True,
+        verbose_name='Аватар')
+
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        verbose_name='Имя пользователя'
+    )
+
+    first_name = models.CharField(
+        max_length=150,
+        verbose_name='Имя'
+    )
+
+    last_name = models.CharField(
+        max_length=150,
+        verbose_name='Фамилия'
+    )
+
     USERNAME_FIELD = 'email'
 
     REQUIRED_FIELDS = (
