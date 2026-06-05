@@ -2,7 +2,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum, Count
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
+from django.urls import reverse
 
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework.views import APIView
@@ -13,21 +13,21 @@ from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
                                         )
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
 
 from .filters import RecipeFilter
 from .pagination import RecipesPagination
 from .permissions import IsAuthorOrReadOnly
 from recipes.models import (Tag, Ingredient, Recipe,
-                            Favorite, ShoppingCart, RecipeIngredient)
-from users.models import Subscription
+                            RecipeIngredient)
 from .serializers import (TagSerializer, IngredientSerializer,
                           RecipeReadSerializer, RecipeWriteSerializer,
                           RecipeShortSerializer, FavoriteSerializer,
                           ShoppingCartSerializer, UserSerializer,
                           SubscriptionSerializer,
                           SubscriptionCreateSerializer,
-                          AvatarSerializer
+                          AvatarSerializer, FavoriteDeleteSerializer,
+                          ShoppingCartDeleteSerializer,
+                          SubscriptionDeleteSerializer
                           )
 
 User = get_user_model()
@@ -153,15 +153,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED
             )
 
-        deleted_count, _ = Favorite.objects.filter(
-            user=request.user,
-            recipe=recipe
-        ).delete()
+        serializer = FavoriteDeleteSerializer(
+            data={
+                'user': request.user.id,
+                'recipe': recipe.id,
+            }
+        )
 
-        if not deleted_count:
-            raise ValidationError(
-                'Рецепт не в избранном'
-            )
+        serializer.is_valid(raise_exception=True)
+        serializer.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -196,15 +196,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED
             )
 
-        deleted_count, _ = ShoppingCart.objects.filter(
-            user=request.user,
-            recipe=recipe
-        ).delete()
+        serializer = ShoppingCartDeleteSerializer(
+            data={
+                'user': request.user.id,
+                'recipe': recipe.id,
+            }
+        )
 
-        if not deleted_count:
-            raise ValidationError(
-                'Рецепта нет в списке покупок'
-            )
+        serializer.is_valid(raise_exception=True)
+        serializer.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -252,9 +252,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         recipe = self.get_object()
 
-        short_link = request.build_absolute_uri(
-            f'/s/{recipe.pk}/'
+        short_path = reverse(
+            'recipe-short-link',
+            kwargs={'pk': recipe.pk}
         )
+
+        short_link = request.build_absolute_uri(short_path)
 
         return Response({
             'short-link': short_link
@@ -266,6 +269,9 @@ class UserViewSet(DjoserUserViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = RecipesPagination
+
+    lookup_field = 'id'
+    lookup_url_kwarg = 'id'
 
     def get_permissions(self):
 
@@ -281,7 +287,7 @@ class UserViewSet(DjoserUserViewSet):
     )
     def subscribe(self, request, id=None):
 
-        author = get_object_or_404(User, id=id)
+        author = self.get_object()
 
         if request.method == 'POST':
 
@@ -305,13 +311,15 @@ class UserViewSet(DjoserUserViewSet):
                 status=status.HTTP_201_CREATED
             )
 
-        deleted_count, _ = Subscription.objects.filter(
-            user=request.user,
-            author=author
-        ).delete()
+        serializer = SubscriptionDeleteSerializer(
+            data={
+                'user': request.user.id,
+                'author': author.id,
+            }
+        )
 
-        if not deleted_count:
-            raise ValidationError('Подписки не существует')
+        serializer.is_valid(raise_exception=True)
+        serializer.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 

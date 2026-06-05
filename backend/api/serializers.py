@@ -15,34 +15,6 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-class RecipeAuthorSerializer(serializers.ModelSerializer):
-
-    is_subscribed = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-            'avatar',
-        )
-
-    def get_is_subscribed(self, obj):
-
-        request = self.context.get('request')
-
-        if request is None or not request.user.is_authenticated:
-            return False
-
-        return request.user.subscriptions.filter(
-            author=obj
-        ).exists()
-
-
 class Base64ImageField(serializers.ImageField):
 
     def to_internal_value(self, data):
@@ -97,6 +69,34 @@ class IngredientAmountSerializer(serializers.ModelSerializer):
         )
 
 
+class UserSerializer(serializers.ModelSerializer):
+
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'email',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'avatar',
+        )
+
+    def get_is_subscribed(self, obj):
+
+        request = self.context.get('request')
+
+        if request is None or not request.user.is_authenticated:
+            return False
+
+        return request.user.subscriptions.filter(
+            author=obj
+        ).exists()
+
+
 class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     ingredients = IngredientAmountSerializer(
@@ -106,7 +106,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
-    author = RecipeAuthorSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
 
     class Meta:
         model = Recipe
@@ -181,6 +181,16 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
+    def create_recipe_ingredients(self, recipe, ingredients_data):
+        RecipeIngredient.objects.bulk_create(
+            RecipeIngredient(
+                recipe=recipe,
+                ingredient_id=ingredient['id'],
+                amount=ingredient['amount']
+            )
+            for ingredient in ingredients_data
+        )
+
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
@@ -191,13 +201,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         recipe.tags.set(tags)
 
-        RecipeIngredient.objects.bulk_create(
-            RecipeIngredient(
-                recipe=recipe,
-                ingredient_id=ingredient_data['id'],
-                amount=ingredient_data['amount']
-            )
-            for ingredient_data in ingredients_data
+        self.create_recipe_ingredients(
+            recipe,
+            ingredients_data
         )
 
         return recipe
@@ -214,13 +220,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
             instance.recipe_ingredients.all().delete()
 
-            RecipeIngredient.objects.bulk_create(
-                RecipeIngredient(
-                    recipe=instance,
-                    ingredient_id=ingredient['id'],
-                    amount=ingredient['amount']
-                )
-                for ingredient in ingredients_data
+            self.create_recipe_ingredients(
+                instance,
+                ingredients_data
             )
 
         return super().update(instance, validated_data)
@@ -302,6 +304,32 @@ class FavoriteSerializer(serializers.ModelSerializer):
         return data
 
 
+class FavoriteDeleteSerializer(serializers.Serializer):
+
+    user = serializers.IntegerField()
+    recipe = serializers.IntegerField()
+
+    def validate(self, attrs):
+
+        if not Favorite.objects.filter(
+            user_id=attrs['user'],
+            recipe_id=attrs['recipe']
+        ).exists():
+
+            raise serializers.ValidationError(
+                'Рецепт не в избранном'
+            )
+
+        return attrs
+
+    def delete(self):
+
+        Favorite.objects.filter(
+            user_id=self.validated_data['user'],
+            recipe_id=self.validated_data['recipe']
+        ).delete()
+
+
 class ShoppingCartSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -319,32 +347,30 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         return data
 
 
-class UserSerializer(serializers.ModelSerializer):
+class ShoppingCartDeleteSerializer(serializers.Serializer):
 
-    is_subscribed = serializers.SerializerMethodField()
+    user = serializers.IntegerField()
+    recipe = serializers.IntegerField()
 
-    class Meta:
-        model = User
-        fields = (
-            'id',
-            'email',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-            'avatar',
-        )
+    def validate(self, attrs):
 
-    def get_is_subscribed(self, obj):
+        if not ShoppingCart.objects.filter(
+            user=attrs['user'],
+            recipe=attrs['recipe']
+        ).exists():
 
-        request = self.context.get('request')
+            raise serializers.ValidationError(
+                'Рецепта нет в списке покупок'
+            )
 
-        if request is None or not request.user.is_authenticated:
-            return False
+        return attrs
 
-        return request.user.subscriptions.filter(
-            author=obj
-        ).exists()
+    def delete(self):
+
+        ShoppingCart.objects.filter(
+            user=self.validated_data['user'],
+            recipe=self.validated_data['recipe']
+        ).delete()
 
 
 class CreateUserSerializer(UserCreateSerializer):
@@ -428,8 +454,7 @@ class SubscriptionCreateSerializer(serializers.ModelSerializer):
                 'Нельзя подписаться на себя'
             )
 
-        if Subscription.objects.filter(
-            user=user,
+        if user.subscriptions.filter(
             author=author
         ).exists():
             raise serializers.ValidationError(
@@ -437,3 +462,28 @@ class SubscriptionCreateSerializer(serializers.ModelSerializer):
             )
 
         return attrs
+
+
+class SubscriptionDeleteSerializer(serializers.Serializer):
+
+    user = serializers.IntegerField()
+    author = serializers.IntegerField()
+
+    def validate(self, attrs):
+
+        if not Subscription.objects.filter(
+            user=attrs['user'],
+            author=attrs['author']
+        ).exists():
+            raise serializers.ValidationError(
+                'Подписки не существует'
+            )
+
+        return attrs
+
+    def delete(self):
+
+        Subscription.objects.filter(
+            user=self.validated_data['user'],
+            author=self.validated_data['author']
+        ).delete()
